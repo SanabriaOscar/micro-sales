@@ -33,7 +33,8 @@ public class SaleServiceImpl implements ISaleService {
         List<ProductResponse> products = new ArrayList<>();
 
         for (Long id : request.getProductIds()) {
-            ResponseEntity<Object> response = productClient.getProductById(id);
+            ResponseEntity<ProductResponse> response = productClient.getProductById(id);
+
             if (response.getBody() == null) {
                 return ResponseCustom.<SaleResponse>builder()
                         .code(ResponseMessages.NOT_FOUND_CODE)
@@ -43,11 +44,7 @@ public class SaleServiceImpl implements ISaleService {
                         .build();
             }
 
-            Map<String, Object> body = (Map<String, Object>) response.getBody();
-            Map<String, Object> data = (Map<String, Object>) body.get("data");
-
-            ProductResponse product = objectMapper.convertValue(data, ProductResponse.class);
-            products.add(product);
+            products.add(response.getBody());
         }
 
         Double total = products.stream().mapToDouble(ProductResponse::getPrice).sum();
@@ -78,6 +75,7 @@ public class SaleServiceImpl implements ISaleService {
                 .data(response)
                 .build();
     }
+
 
     @Override
     public ResponseCustom<List<SaleResponse>> getAllSales() {
@@ -124,7 +122,8 @@ public class SaleServiceImpl implements ISaleService {
 
         List<ProductResponse> products = new ArrayList<>();
         for (Long pid : request.getProductIds()) {
-            ResponseEntity<Object> response = productClient.getProductById(pid);
+            ResponseEntity<ProductResponse> response = productClient.getProductById(pid);
+
             if (response.getBody() == null) {
                 return ResponseCustom.<SaleResponse>builder()
                         .code(ResponseMessages.NOT_FOUND_CODE)
@@ -134,11 +133,7 @@ public class SaleServiceImpl implements ISaleService {
                         .build();
             }
 
-            Map<String, Object> body = (Map<String, Object>) response.getBody();
-            Map<String, Object> data = (Map<String, Object>) body.get("data");
-
-            ProductResponse product = objectMapper.convertValue(data, ProductResponse.class);
-            products.add(product);
+            products.add(response.getBody());
         }
 
         Double total = products.stream().mapToDouble(ProductResponse::getPrice).sum();
@@ -166,4 +161,5 @@ public class SaleServiceImpl implements ISaleService {
                 .data(response)
                 .build();
     }
+
 }

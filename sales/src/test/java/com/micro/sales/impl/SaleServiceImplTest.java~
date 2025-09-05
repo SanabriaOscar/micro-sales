@@ -121,3 +121,4 @@ class SaleServiceImplTest {
         assertTrue(response.getDescription().contains("La venta con id"));
     }
 }
+ 

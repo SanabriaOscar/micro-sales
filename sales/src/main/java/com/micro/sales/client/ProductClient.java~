@@ -1,5 +1,4 @@
 package com.micro.sales.client;
-import com.micro.sales.dto.ProductResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,6 +10,6 @@ public interface ProductClient {
     @GetMapping("/api/products")
     ResponseEntity<Object> getAllProducts();
 
-    @GetMapping("/{id}")
-    ResponseEntity<ProductResponse> getProductById(@PathVariable Long id);
+    @GetMapping("/api/products/{id}")
+    ResponseEntity<Object> getProductById(@PathVariable("id") Long id);
 }
