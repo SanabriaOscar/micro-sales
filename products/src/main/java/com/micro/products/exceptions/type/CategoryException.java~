@@ -1,0 +1,10 @@
+package com.micro.products.exceptions.type;
+
+import com.micro.products.utils.response.ResponseCustom;
+
+public class CategoryException extends RuntimeException{
+
+    public CategoryException(ResponseCustom<Object> response) {
+        super(response.getDescription());
+    }
+}

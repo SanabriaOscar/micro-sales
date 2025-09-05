@@ -1,0 +1,74 @@
+package com.micro.products.impl;
+
+import com.micro.products.exceptions.type.ProductException;
+import com.micro.products.model.Product;
+import com.micro.products.repository.ProductRepository;
+import com.micro.products.service.impl.ProductServiceImpl;
+import com.micro.products.utils.DataDummy;
+import com.micro.products.utils.constants.ResponseMessages;
+import com.micro.products.utils.response.ResponseCustom;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class ProductServiceImplTest {
+
+    @Mock
+    private ProductRepository productRepository;
+
+    @InjectMocks
+    private ProductServiceImpl productService;
+
+    @Test
+    void getAllProducts_ShouldReturn204_WhenNoProducts() {
+        when(productRepository.findAll()).thenReturn(DataDummy.getEmptyProductList());
+
+        ResponseCustom<List<Product>> response = productService.getAllProducts();
+
+        assertEquals(204, response.getCode());
+        assertEquals(ResponseMessages.PRODUCTS_NOT_FOUND, response.getDescription());
+        assertTrue(response.getData().isEmpty());
+    }
+
+    @Test
+    void getAllProducts_ShouldReturn200_WhenProductsExist() {
+        when(productRepository.findAll()).thenReturn(DataDummy.getProductList());
+
+        ResponseCustom<List<Product>> response = productService.getAllProducts();
+
+        assertEquals(200, response.getCode());
+        assertFalse(response.getData().isEmpty());
+        assertEquals("Laptop", response.getData().get(0).getName());
+    }
+
+    @Test
+    void getProductById_ShouldReturn200_WhenProductExists() throws ProductException {
+        when(productRepository.findById(1L)).thenReturn(Optional.of(DataDummy.getLaptopProduct()));
+
+        ResponseCustom<Product> response = productService.getProductById(1L);
+
+        assertEquals(200, response.getCode());
+        assertEquals("Laptop", response.getData().getName());
+        assertEquals(1500.0, response.getData().getPrice());
+    }
+
+    @Test
+    void getProductById_ShouldThrowException_WhenProductNotFound() {
+        when(productRepository.findById(99L)).thenReturn(Optional.empty());
+
+        ProductException ex = assertThrows(ProductException.class, () -> productService.getProductById(99L));
+
+        assertEquals(204, ex.getResponse().getCode());
+        assertEquals(ResponseMessages.PRODUCT_NOT_FOUND, ex.getResponse().getDescription());
+    }
+}

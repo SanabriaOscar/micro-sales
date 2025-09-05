@@ -1,0 +1,28 @@
+package com.micro.products.controller;
+
+import com.micro.products.controller.api.ProductApi;
+import com.micro.products.service.IProductService;
+import com.micro.products.utils.response.ResponseCustom;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class ProductController implements ProductApi {
+    private final IProductService productService;
+
+    public ProductController(IProductService productService) {
+        this.productService = productService;
+    }
+
+    @Override
+    public ResponseEntity<Object> listAllProducts() {
+       ResponseCustom<?> response = productService.getAllProducts();
+       return ResponseEntity.status(response.getCode()).body(response);
+    }
+
+    @Override
+    public ResponseEntity<Object> findByIdProduct(Long id) {
+        ResponseCustom<?> response = productService.getProductById(id);
+        return ResponseEntity.status(response.getCode()).body(response);
+    }
+}
