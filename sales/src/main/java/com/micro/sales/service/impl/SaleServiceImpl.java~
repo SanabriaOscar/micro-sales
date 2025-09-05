@@ -1,0 +1,169 @@
+package com.micro.sales.service.impl;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.micro.sales.client.ProductClient;
+import com.micro.sales.dto.ProductResponse;
+import com.micro.sales.dto.SaleRequest;
+import com.micro.sales.dto.SaleResponse;
+import com.micro.sales.model.Sale;
+import com.micro.sales.repository.SaleRepository;
+import com.micro.sales.service.ISaleService;
+import com.micro.sales.utils.response.ResponseCustom;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class SaleServiceImpl implements ISaleService {
+
+    private final SaleRepository saleRepository;
+    private final ProductClient productClient;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Override
+    public ResponseCustom<SaleResponse> createSale(SaleRequest request) {
+        List<ProductResponse> products = new ArrayList<>();
+
+        for (Long id : request.getProductIds()) {
+            ResponseEntity<Object> response = productClient.getProductById(id);
+            if (response.getBody() == null) {
+                return ResponseCustom.<SaleResponse>builder()
+                        .code(404)
+                        .title("Error")
+                        .description("Producto con id " + id + " no encontrado")
+                        .messageButton("Revisar productos")
+                        .build();
+            }
+
+            Map<String, Object> body = (Map<String, Object>) response.getBody();
+            Map<String, Object> data = (Map<String, Object>) body.get("data");
+
+            ProductResponse product = objectMapper.convertValue(data, ProductResponse.class);
+            products.add(product);
+        }
+
+        Double total = products.stream().mapToDouble(ProductResponse::getPrice).sum();
+        String description = products.stream()
+                .map(p -> p.getName() + " (" + p.getDescription() + ")")
+                .collect(Collectors.joining(", "));
+
+        Sale sale = Sale.builder()
+                .productsDescription(description)
+                .total(total)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        Sale saved = saleRepository.save(sale);
+
+        SaleResponse response = SaleResponse.builder()
+                .id(saved.getId())
+                .productsDescription(saved.getProductsDescription())
+                .total(saved.getTotal())
+                .createdAt(saved.getCreatedAt())
+                .build();
+
+        return ResponseCustom.<SaleResponse>builder()
+                .code(201)
+                .title("Éxito")
+                .description("Venta creada exitosamente")
+                .messageButton("Aceptar")
+                .data(response)
+                .build();
+    }
+
+    @Override
+    public ResponseCustom<List<SaleResponse>> getAllSales() {
+        List<SaleResponse> sales = saleRepository.findAll().stream()
+                .map(s -> SaleResponse.builder()
+                        .id(s.getId())
+                        .productsDescription(s.getProductsDescription())
+                        .total(s.getTotal())
+                        .createdAt(s.getCreatedAt())
+                        .build())
+                .collect(Collectors.toList());
+
+        if (sales.isEmpty()) {
+            return ResponseCustom.<List<SaleResponse>>builder()
+                    .code(204)
+                    .title("Sin datos")
+                    .description("No se encontraron ventas registradas")
+                    .messageButton("Volver")
+                    .data(sales)
+                    .build();
+        }
+
+        return ResponseCustom.<List<SaleResponse>>builder()
+                .code(200)
+                .title("Éxito")
+                .description("Ventas obtenidas correctamente")
+                .messageButton("Aceptar")
+                .data(sales)
+                .build();
+    }
+
+    @Override
+    public ResponseCustom<SaleResponse> updateSale(Long id, SaleRequest request) {
+        Sale sale = saleRepository.findById(id)
+                .orElse(null);
+
+        if (sale == null) {
+            return ResponseCustom.<SaleResponse>builder()
+                    .code(404)
+                    .title("Error")
+                    .description("La venta con id " + id + " no fue encontrada")
+                    .messageButton("Revisar")
+                    .build();
+        }
+
+        List<ProductResponse> products = new ArrayList<>();
+        for (Long pid : request.getProductIds()) {
+            ResponseEntity<Object> response = productClient.getProductById(pid);
+            if (response.getBody() == null) {
+                return ResponseCustom.<SaleResponse>builder()
+                        .code(404)
+                        .title("Error")
+                        .description("Producto con id " + pid + " no encontrado")
+                        .messageButton("Revisar productos")
+                        .build();
+            }
+
+            Map<String, Object> body = (Map<String, Object>) response.getBody();
+            Map<String, Object> data = (Map<String, Object>) body.get("data");
+
+            ProductResponse product = objectMapper.convertValue(data, ProductResponse.class);
+            products.add(product);
+        }
+
+        Double total = products.stream().mapToDouble(ProductResponse::getPrice).sum();
+        String description = products.stream()
+                .map(p -> p.getName() + " (" + p.getDescription() + ")")
+                .collect(Collectors.joining(", "));
+
+        sale.setProductsDescription(description);
+        sale.setTotal(total);
+
+        Sale updated = saleRepository.save(sale);
+
+        SaleResponse response = SaleResponse.builder()
+                .id(updated.getId())
+                .productsDescription(updated.getProductsDescription())
+                .total(updated.getTotal())
+                .createdAt(updated.getCreatedAt())
+                .build();
+
+        return ResponseCustom.<SaleResponse>builder()
+                .code(200)
+                .title("Éxito")
+                .description("Venta actualizada correctamente")
+                .messageButton("Aceptar")
+                .data(response)
+                .build();
+    }
+}

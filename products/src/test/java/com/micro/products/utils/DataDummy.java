@@ -18,7 +18,7 @@ public class DataDummy {
     public static List<Category> getEmptyCategoryList() {
         return List.of();
     }
-// Data dummy products
+    // Data dummy products
     public static Product getLaptopProduct() {
         return new Product(1L, "Laptop", "Laptop", 1500.0, getTechCategory());
     }

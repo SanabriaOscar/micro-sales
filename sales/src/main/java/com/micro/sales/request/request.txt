@@ -1,0 +1,58 @@
+===========================================
+MICROSERVICIO: SALES
+Base URL: http://localhost:8081/api/sales
+===========================================
+
+1) POST /api/sales
+   - Descripción: Crea una venta con lista de productos.
+   - Request Body:
+     {
+       "productIds": [1, 2, 3]
+     }
+   - Flujo interno: Consulta a ProductService vía FeignClient.
+   - Response (200 OK):
+     {
+       "code": 200,
+       "description": "Venta creada.",
+       "data": {
+         "id": 1,
+         "productsDescription": "computer (desktop), computer (portable)",
+         "total": 4500000.0,
+         "createdAt": "2025-09-04T19:35:12"
+       }
+     }
+
+2) GET /api/sales
+   - Descripción: Lista todas las ventas.
+   - Request: Ninguno.
+   - Response (200 OK):
+     {
+       "code": 200,
+       "description": "Lista de ventas.",
+       "data": [
+         {
+           "id": 1,
+           "productsDescription": "computer (desktop), computer (portable)",
+           "total": 4500000.0,
+           "createdAt": "2025-09-04T19:35:12"
+         }
+       ]
+     }
+
+3) PUT /api/sales/{id}
+   - Descripción: Actualiza los productos de una venta.
+   - Request Body:
+     {
+       "productIds": [2]
+     }
+   - Response (200 OK):
+     {
+       "code": 200,
+       "description": "Venta actualizada.",
+       "data": {
+         "id": 1,
+         "productsDescription": "computer (portable)",
+         "total": 2500000.0,
+         "createdAt": "2025-09-04T19:35:12"
+       }
+     }

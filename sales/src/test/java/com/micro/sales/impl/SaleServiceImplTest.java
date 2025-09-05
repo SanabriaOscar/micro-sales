@@ -1,0 +1,126 @@
+package com.micro.sales.impl;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.micro.sales.client.ProductClient;
+import com.micro.sales.dto.ProductResponse;
+import com.micro.sales.dto.SaleRequest;
+import com.micro.sales.dto.SaleResponse;
+import com.micro.sales.model.Sale;
+import com.micro.sales.repository.SaleRepository;
+import com.micro.sales.service.impl.SaleServiceImpl;
+import com.micro.sales.utils.DataDummy;
+import com.micro.sales.utils.constants.ResponseMessages;
+import com.micro.sales.utils.response.ResponseCustom;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.http.ResponseEntity;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+class SaleServiceImplTest {
+
+    @Mock
+    private SaleRepository saleRepository;
+
+    @Mock
+    private ProductClient productClient;
+
+    @InjectMocks
+    private SaleServiceImpl saleService;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Test
+    void getAllSales_ShouldReturn204_WhenNoSales() {
+        when(saleRepository.findAll()).thenReturn(DataDummy.getEmptySaleList());
+
+        ResponseCustom<List<SaleResponse>> response = saleService.getAllSales();
+
+        assertEquals(ResponseMessages.NO_CONTENT_CODE, response.getCode());
+        assertEquals(ResponseMessages.SALES_NOT_FOUND, response.getDescription());
+        assertTrue(response.getData().isEmpty());
+    }
+
+    @Test
+    void getAllSales_ShouldReturn200_WhenSalesExist() {
+        when(saleRepository.findAll()).thenReturn(DataDummy.getSaleList());
+
+        ResponseCustom<List<SaleResponse>> response = saleService.getAllSales();
+
+        assertEquals(ResponseMessages.SUCCESS_CODE, response.getCode());
+        assertFalse(response.getData().isEmpty());
+        assertEquals("Laptop (Gaming Laptop)", response.getData().get(0).getProductsDescription());
+    }
+
+    @Test
+    void createSale_ShouldReturn201_WhenProductsExist() {
+        SaleRequest request = DataDummy.getSaleRequestWithProducts();
+        ProductResponse laptop = DataDummy.getLaptopProduct();
+        ProductResponse book = DataDummy.getBookProduct();
+
+        when(productClient.getProductById(1L)).thenReturn(ResponseEntity.ok(Map.of("data", laptop)));
+        when(productClient.getProductById(2L)).thenReturn(ResponseEntity.ok(Map.of("data", book)));
+        when(saleRepository.save(org.mockito.ArgumentMatchers.any(Sale.class)))
+                .thenReturn(DataDummy.getSaleEntity());
+
+        ResponseCustom<SaleResponse> response = saleService.createSale(request);
+
+        assertEquals(ResponseMessages.CREATED_CODE, response.getCode());
+        assertEquals(ResponseMessages.SALE_CREATED, response.getDescription());
+        assertNotNull(response.getData());
+        assertEquals("Laptop (Gaming Laptop)", response.getData().getProductsDescription());
+    }
+
+    @Test
+    void createSale_ShouldReturn404_WhenProductNotFound() {
+        SaleRequest request = DataDummy.getSaleRequestWithProducts();
+
+        when(productClient.getProductById(1L)).thenReturn(ResponseEntity.ok().body(null));
+
+        ResponseCustom<SaleResponse> response = saleService.createSale(request);
+
+        assertEquals(ResponseMessages.NOT_FOUND_CODE, response.getCode());
+        assertTrue(response.getDescription().contains("Producto con id"));
+    }
+
+    @Test
+    void updateSale_ShouldReturn200_WhenSaleExists() {
+        SaleRequest request = DataDummy.getSaleRequestWithProducts();
+        Sale existingSale = DataDummy.getSaleEntity();
+
+        when(saleRepository.findById(1L)).thenReturn(Optional.of(existingSale));
+        when(productClient.getProductById(1L)).thenReturn(ResponseEntity.ok(Map.of("data", DataDummy.getLaptopProduct())));
+        when(productClient.getProductById(2L)).thenReturn(ResponseEntity.ok(Map.of("data", DataDummy.getBookProduct())));
+        when(saleRepository.save(existingSale)).thenReturn(existingSale);
+
+        ResponseCustom<SaleResponse> response = saleService.updateSale(1L, request);
+
+        assertEquals(ResponseMessages.SUCCESS_CODE, response.getCode());
+        assertEquals(ResponseMessages.SALE_UPDATED, response.getDescription());
+        assertNotNull(response.getData());
+    }
+
+    @Test
+    void updateSale_ShouldReturn404_WhenSaleNotFound() {
+        SaleRequest request = DataDummy.getSaleRequestWithProducts();
+
+        when(saleRepository.findById(99L)).thenReturn(Optional.empty());
+
+        ResponseCustom<SaleResponse> response = saleService.updateSale(99L, request);
+
+        assertEquals(ResponseMessages.NOT_FOUND_CODE, response.getCode());
+        assertTrue(response.getDescription().contains("La venta con id"));
+    }
+}

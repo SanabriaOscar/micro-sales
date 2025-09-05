@@ -1,6 +1,7 @@
-package com.micro.products.utils.response;
+package com.micro.sales.utils.response;
 
 import lombok.*;
+
 
 @Getter
 @Setter

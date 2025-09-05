@@ -11,13 +11,10 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 public class ResponseCustom<T> {
-    private String code;
+    private int code;
     private String title;
     private String description;
     private String messageButton;
     private T data;
-
-    public ResponseCustom(String number, List<Product> products) {
-    }
 }
 
